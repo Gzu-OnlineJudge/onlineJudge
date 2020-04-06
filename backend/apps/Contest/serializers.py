@@ -5,9 +5,15 @@ from Issue.models import *
 
 
 class MatchSerializer(serializers.ModelSerializer):
+
     reg_status = serializers.IntegerField(default=0)
-    ownerName = serializers.CharField(source="owner.username")
-    ownerNickname = serializers.CharField(source="owner.nickname")
+    owner = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_owner(obj):
+        from UserProfile.serializers import UserSerializer
+        data = UserSerializer(obj.owner).data
+        return data
 
     class Meta:
         model = Match
@@ -42,15 +48,15 @@ class MatchRegisterSerializer(serializers.ModelSerializer):
 
 
 class MatchIncludeSerializer(serializers.ModelSerializer):
-    matchName = serializers.CharField(source="match.matchName", default="")
-    proNo = serializers.IntegerField(source="problem.no", default="")
+    match_id = serializers.IntegerField(source="match.id", default=0)
+    problem_id = serializers.IntegerField(source="problem.no", default=1000)
     title = serializers.CharField(source="problem.title", default="")
     classification = serializers.CharField(source="problem.classification", default="")
     probAuthority = serializers.CharField(source="problem.probAuthority", default="")
 
     class Meta:
         model = MatchInclude
-        fields = ("ac_num", "total_num", "matchName", "proNo", "title", "classification", "probAuthority")
+        fields = ("ac_num", "total_num", "match_id", "problem_id", "no", "title", "classification", "probAuthority")
 
 
 class MatchRankSerializer(serializers.ModelSerializer):

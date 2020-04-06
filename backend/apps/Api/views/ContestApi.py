@@ -50,36 +50,36 @@ def register_status(contests, user):
             flag_time = 3
         try:
             flag = MatchRegister.objects.filter(match__id=con.id, user__username=user.username).count()
-        except:
+        except Exception:
             flag = 0
         con.reg_status = flag  # 动态成员  用户对该比赛注册状态
-
         Match.objects.filter(id=con.id).update(status=flag_time)
         con.status = flag_time
 
 
 class GetContestPage(APIView):
 
-    def get(self, request):  # 按（id|名字|状态）查询第page页的竞赛列表
-        data = {'status': 200, 'msg': '成功获取竞赛列表', 'data': {}}
+    @staticmethod
+    def get(request):  # 按（id|名字|状态）查询第page页的竞赛列表
+        data = {'status': 200, 'msg': '成功获取竞赛列表'}
         match_Id_Name = request.GET.get('match_id_name', '')  # 默认值为''
         query_Criteria = {'attribute': '公开'}  # 创建一个多条件查询字典
         if match_Id_Name != '':
             try:
                 query_Criteria['id'] = int(match_Id_Name)
-            except:
+            except ValueError:
                 query_Criteria['matchName__regex'] = '.*'.join(match_Id_Name)
         contest = list(reversed(Match.objects.filter(**query_Criteria)))
 
-        is_Logion, user = check_auth(request._request)
+        is_Login, user = check_auth(request)
         register_status(contest, user)  # 判断用户对竞赛列表的注册情况
         # 暂未优化
         try:
             match_Status = int(request.GET.get('match_status', 0))
-        except:
+        except ValueError:
             match_Status = 0
 
-        if match_Status <= 3 and match_Status >= 0:
+        if 3 >= match_Status >= 0:
             temp = []
             for con in contest:
                 if con.status == match_Status or (match_Status == 1 and con.status == 0) or match_Status == 0:
@@ -93,19 +93,10 @@ class GetContestPage(APIView):
         paginator_OfContestAll = paginator_OfContestAll.object_list
         paginator_OfContestAll = MatchSerializer(paginator_OfContestAll, many=True).data
 
-        data["data"].update({
+        data.update({
             'contest': paginator_OfContestAll,
             'now_page': page_num, 'match_status': match_Status,
             'match_id_name': match_Id_Name})
-
-        # if request.GET.get('alr_reg', '') != '':
-        #     ret_dir['alr_reg'] = 'You have registered for the competition.'
-        # reg_suc = request.GET.get('reg_suc', '')
-        # if reg_suc != '':
-        #     if reg_suc == '1':
-        #         ret_dir['reg_info'] = 'registered successfully.'
-        #     elif reg_suc == '0':
-        #         ret_dir['reg_info'] = 'The registration time has passed.'
         return JsonResponse(data)
 
 
@@ -175,24 +166,14 @@ class ContestShowContent(APIView):
         except MultipleObjectsReturned:
             data.update({'status': 400, 'msg': '竞赛错误'})
             return JsonResponse(data)
-
-        length = contest.howLong
-        problems = MatchIncludeSerializer(contest.matchinclude_set.all(), many=True).data
         time1 = contest.startTime.replace(tzinfo=None)  # 比赛开始时间
         time2 = datetime.now()  # 当前系统时间
-        data.update({
-            'contest': MatchSerializer(),
-            'startTime': contest.startTime,
-            'length': length,
-            'contest_name': contest.matchName,
-            'contest_id': contest.id})
         if time2 < time1:
-            data["data"].update({'is_start': False})
+            data.update({'is_start': False, 'startTime': contest.startTime})
         elif time2 >= time1:
-            data["data"].update({
-                'contest_info': contest.info,
-                'contest_problems': problems,
-                'is_start': True})
+            problems = MatchIncludeSerializer(contest.matchinclude_set.all(), many=True).data
+            data.update({'is_start': True, 'contest': MatchSerializer(contest).data, 'problems': problems})
+
         return JsonResponse(data)
 
 
