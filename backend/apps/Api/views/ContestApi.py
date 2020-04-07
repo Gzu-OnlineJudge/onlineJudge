@@ -273,37 +273,19 @@ class ContestGetStatus(APIView):
             except ValueError:
                 pass
 
-        matchSubmit_List = MatchSubmit.objects.filter(**query_criteria).order_by('-runID')
-        # change_status(temp) 放弃在后台进行状态转化是因为在前端需要利用状态数字编号来进行分别颜色
+        matchSubmit_List = MatchSubmit.objects.filter(**query_criteria)
 
         # 分页处理
         paginator_OfStatusAll = Paginator(matchSubmit_List, 30)
         matchSubmit_List = paginator_OfStatusAll.page(page_num).object_list
         matchSubmit_List = MatchSubmitListSerializer(matchSubmit_List, many=True).data
 
-        # 创建一个返回状态列表
-        # statusList = []
-        # for item in page_of_status_paginator:
-        #     _temp = {}
-        #     _temp['contest_id'] = contest.id
-        #     _temp['userName'] = item.user.username
-        #     _temp['uid'] = item.user.id
-        #     _temp['probID'] = item.problem.no
-        #     _temp['probName'] = PROBLEMS_LIST[problems_list.index(item.problem)]
-        #     _temp['runID'] = item.runID
-        #     _temp['result'] = item.result
-        #     _temp['time'] = item.time
-        #     _temp['memory'] = item.memory
-        #     _temp['language'] = item.language
-        #     _temp['subTime'] = item.subTime.strftime('%Y-%m-%d %H:%M:%S')
-        #     statusList.append(_temp)
-        data["data"] = {
-            'statusList': matchSubmit_List, 'now_page': page_Num, 'page_num': paginator_OfStatusAll.num_pages,
-            'submit_user_name': submit_User_Name, 'judge_states': judge_States,
-            'language': language, 'problem_id': problem_Id
-        }
+        data.update({
+            'statusList': matchSubmit_List, 'now_page': page_num, 'page_num': paginator_OfStatusAll.num_pages,
+            'submit_user_name': submit_user_name, 'judge_states': judge_states,
+            'language': language, 'problem_id': problem_id
+        })
         return JsonResponse(data)
-
 
 
 # 以下为在比赛页面进行提交代码, 此函数是由Ajax提交的

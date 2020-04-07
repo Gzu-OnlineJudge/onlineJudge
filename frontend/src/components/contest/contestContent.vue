@@ -224,10 +224,10 @@
                   <tbody>
                   <tr v-for="(i, index) in statusList" :key="index">
                     <td  scope="row">{{i.runID}}</td>
-                    <td><router-link to="#">{{i.user.user_name}}</router-link></td>
-                    <td><router-link to="#">{{i.problem_id}}</router-link></td>
+                    <td><router-link to="#">{{i.user.username}}</router-link></td>
+                    <td><router-link to="#">{{(problems.find(item=>item.problem_id === i.problem_id) || {'no': 'A'}).no}}</router-link></td>
                     <td>
-                      <router-link :to="{name: 'contestProblemCode', params: {contest_id: 1, run_id: 1}}">
+                      <router-link :to="{name: 'contestProblemCode', params: {contest_id: i.match_id, run_id: i.runID}}">
                         {{i.result}}
                       </router-link>
                     </td>
@@ -441,24 +441,13 @@
       },
       getStatusList(){
         this.axios.get(`http://192.168.0.100:8000/api/contest/${this.contest.id}/status/`).then(res=>{
-          console.log(res.data)
           if(res.data.status === 200){
             this.statusList = [];
             res.data.statusList.forEach(item=>{
-              this.statusList.push({
-                runID: item.runID,
-                problem_id: item.probId,
-                memory: item.memory,
-                subTime: item.subTime,
-                time: item.time,
-                result: item.result,
-                language: item.language,
-                user: {
-                  user_name: item.userName,
-                  user_id: item.userId,
-                }
-              })
+              item.subTime = new Date(item.subTime);
+              this.statusList.push(item);
             })
+            console.log(this.statusList);
           }
         });
       }
