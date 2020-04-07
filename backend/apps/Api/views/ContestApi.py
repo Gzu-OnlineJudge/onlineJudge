@@ -179,27 +179,29 @@ class ContestShowContent(APIView):
 
 # 以下为展示比赛题目, 此函数是由Ajax提交的
 class ContestGetProblems(APIView):
-    def get(self, request, match_id):  # 获取题目的提交人数&通过人数&通过率&用户的通过情况
+
+    @staticmethod
+    def get(request, match_id):  # 获取题目的提交人数&通过人数&通过率&用户的通过情况
         data = {'status': 200, 'msg': '成功获取比赛题目列表', 'data': {}}
-        if request._request.is_ajax():
-            try:
-                contest = Match.objects.get(id=match_id)
-                # 尝试获取比赛，获取不到就不做处理
-            except:
-                data.update({'status': 400, 'msg': '竞赛不存在'})
-                return JsonResponse(data)
-            problems = MatchIncludeSerializer(contest.matchinclude_set.all, many=True).data
-            ratio_List = ratio(contest, problems)  # 通过率
-            ac_Nums = problem_ac_nums(contest, problems)  # 通过人数
-            submit_Nums = problem_submit_nums(contest, problems)  # 提交人数
-            is_Login, user = check_auth(request._request)
-            ac_List = is_accepted(contest, user, problems)  # 用户通过情况
-            data["data"] = {
-                'ratio_list': ratio_List,
-                'ac_nums': ac_Nums,
-                'submit_nums': submit_Nums,
-                'ac_list': ac_List
-            }
+        try:
+            contest = Match.objects.get(id=match_id)
+            # 尝试获取比赛，获取不到就不做处理
+        except ObjectDoesNotExist:
+            data.update({'status': 400, 'msg': '竞赛不存在'})
+            return JsonResponse(data)
+        problems = MatchIncludeSerializer(contest.matchinclude_set.all, many=True).data
+        ratio_List = ratio(contest, problems)  # 通过率
+        ac_Nums = problem_ac_nums(contest, problems)  # 通过人数
+        submit_Nums = problem_submit_nums(contest, problems)  # 提交人数
+        is_Login, user = check_auth(request)
+        ac_List = is_accepted(contest, user, problems)  # 用户通过情况
+        data["data"] = {
+            'ratio_list': ratio_List,
+            'ac_nums': ac_Nums,
+            'submit_nums': submit_Nums,
+            'ac_list': ac_List
+        }
+
         return JsonResponse(data)
 
 
@@ -230,76 +232,78 @@ PROBLEMS_LIST = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'
 
 
 class ContestGetStatus(APIView):
-    def get(self, request, match_id):
+
+    @staticmethod
+    def get(request, match_id):
         data = {'status': 200, 'msg': '获取成功', 'data': {}}
-        if request._request.is_ajax():
-            try:
-                contest = Match.objects.get(id=match_id)
-            except:
-                data.update({'msg': 'Error: No such contest!'})
-                return JsonResponse(data)
-
-            # 从提交GET 提交请求中去获取筛选条件
-            submit_User_Name = request.GET.get('submit_User_Name', '')
-            page_Num = request.GET.get('page', 1)
-            judge_States = request.GET.get('judge_States', '')
-            language = request.GET.get('language', '')
-            problem_Id = request.GET.get('problem_Id', '')
-
-            query_criteria = {'match__id': contest.id}  # 创建一个多条件查询字典
-
-            # 创建对用户名进行正则匹配的条件
-            if submit_User_Name != '':
-                query_criteria['user__username__iregex'] = submit_User_Name
-
-            # 创建对题目状态尽行筛选的条件
-            if judge_States != '' and judge_States != '0':
-                query_criteria['result'] = judge_States
-
-            # 创建对提交语言进行筛选的条件
-            if language != '' and language != 'All':  # 当值为C++时不知道为什么传不过来，推测可能是无法解析
-                if language == 'Csrc':
-                    query_criteria['language'] = 'C++'
-                else:
-                    query_criteria['language'] = language
-
-            # 创建对题目的筛选条件
-            if problem_Id != '' and problem_Id != '0':
-                try:
-                    query_criteria['problem__no'] = int(problem_Id)
-                except:
-                    pass
-
-            matchSubmit_List = MatchSubmit.objects.filter(**query_criteria).order_by('-runID')
-            # change_status(temp) 放弃在后台进行状态转化是因为在前端需要利用状态数字编号来进行分别颜色
-
-            # 分页处理
-            paginator_OfStatusAll = Paginator(matchSubmit_List, 30)
-            matchSubmit_List = paginator_OfStatusAll.page(page_Num).object_list
-            matchSubmit_List = MatchSubmitListSerializer(matchSubmit_List, many=True).data
-
-            # 创建一个返回状态列表
-            # statusList = []
-            # for item in page_of_status_paginator:
-            #     _temp = {}
-            #     _temp['contest_id'] = contest.id
-            #     _temp['userName'] = item.user.username
-            #     _temp['uid'] = item.user.id
-            #     _temp['probID'] = item.problem.no
-            #     _temp['probName'] = PROBLEMS_LIST[problems_list.index(item.problem)]
-            #     _temp['runID'] = item.runID
-            #     _temp['result'] = item.result
-            #     _temp['time'] = item.time
-            #     _temp['memory'] = item.memory
-            #     _temp['language'] = item.language
-            #     _temp['subTime'] = item.subTime.strftime('%Y-%m-%d %H:%M:%S')
-            #     statusList.append(_temp)
-            data["data"] = {
-                'statusList': matchSubmit_List, 'now_page': page_Num, 'page_num': paginator_OfStatusAll.num_pages,
-                'submit_user_name': submit_User_Name, 'judge_states': judge_States,
-                'language': language, 'problem_id': problem_Id
-            }
+        try:
+            contest = Match.objects.get(id=match_id)
+        except ObjectDoesNotExist:
+            data.update({'msg': 'Error: No such contest!'})
             return JsonResponse(data)
+
+        # 从提交GET 提交请求中去获取筛选条件
+        submit_user_name = request.GET.get('submit_user_name', '')
+        page_num = request.GET.get('page', 1)
+        judge_states = request.GET.get('judge_states', '')
+        language = request.GET.get('language', '')
+        problem_id = request.GET.get('problem_id', '')
+
+        query_criteria = {'match__id': contest.id}  # 创建一个多条件查询字典
+
+        # 创建对用户名进行正则匹配的条件
+        if submit_user_name != '':
+            query_criteria['user__username__iregex'] = submit_user_name
+
+        # 创建对题目状态尽行筛选的条件
+        if judge_states != '' and judge_states != '0':
+            query_criteria['result'] = judge_states
+
+        # 创建对提交语言进行筛选的条件
+        if language != '' and language != 'All':  # 当值为C++时不知道为什么传不过来，推测可能是无法解析
+            if language == 'Csrc':
+                query_criteria['language'] = 'C++'
+            else:
+                query_criteria['language'] = language
+
+        # 创建对题目的筛选条件
+        if problem_id != '' and problem_id != '0':
+            try:
+                query_criteria['problem__no'] = int(problem_id)
+            except ValueError:
+                pass
+
+        matchSubmit_List = MatchSubmit.objects.filter(**query_criteria).order_by('-runID')
+        # change_status(temp) 放弃在后台进行状态转化是因为在前端需要利用状态数字编号来进行分别颜色
+
+        # 分页处理
+        paginator_OfStatusAll = Paginator(matchSubmit_List, 30)
+        matchSubmit_List = paginator_OfStatusAll.page(page_num).object_list
+        matchSubmit_List = MatchSubmitListSerializer(matchSubmit_List, many=True).data
+
+        # 创建一个返回状态列表
+        # statusList = []
+        # for item in page_of_status_paginator:
+        #     _temp = {}
+        #     _temp['contest_id'] = contest.id
+        #     _temp['userName'] = item.user.username
+        #     _temp['uid'] = item.user.id
+        #     _temp['probID'] = item.problem.no
+        #     _temp['probName'] = PROBLEMS_LIST[problems_list.index(item.problem)]
+        #     _temp['runID'] = item.runID
+        #     _temp['result'] = item.result
+        #     _temp['time'] = item.time
+        #     _temp['memory'] = item.memory
+        #     _temp['language'] = item.language
+        #     _temp['subTime'] = item.subTime.strftime('%Y-%m-%d %H:%M:%S')
+        #     statusList.append(_temp)
+        data["data"] = {
+            'statusList': matchSubmit_List, 'now_page': page_Num, 'page_num': paginator_OfStatusAll.num_pages,
+            'submit_user_name': submit_User_Name, 'judge_states': judge_States,
+            'language': language, 'problem_id': problem_Id
+        }
+        return JsonResponse(data)
+
 
 
 # 以下为在比赛页面进行提交代码, 此函数是由Ajax提交的
