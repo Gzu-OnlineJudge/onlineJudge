@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import *
 from Issue.models import *
+from UserProfile.serializers import UserSerializer
 
 
 class MatchSerializer(serializers.ModelSerializer):
@@ -21,16 +22,17 @@ class MatchSerializer(serializers.ModelSerializer):
 
 
 class MatchSubmitListSerializer(serializers.ModelSerializer):
-    matchId = serializers.CharField(source="match.id")
-    userName = serializers.CharField(source="user.username")
-    userId = serializers.IntegerField(source="user.id")
-    probId = serializers.IntegerField(source="problem.no")
-    probName = serializers.CharField(source="problem.title")
+    match_id = serializers.CharField(source="match.id")
+    user = serializers.SerializerMethodField()
+    problem_id = serializers.IntegerField(source="problem.no")
+
+    @staticmethod
+    def get_user(obj):
+        return UserSerializer(obj.user).data
 
     class Meta:
         model = MatchSubmit
-        fields = ("matchId", "userName", "userId", "probId", "probName",
-                  "runID", "result", "time", "memory", "language", "subTime",)
+        fields = ("match_id", "user", "problem_id", "runID", "result", "time", "memory", "language", "subTime",)
 
 
 class MatchSubmitSerializer(serializers.ModelSerializer):
