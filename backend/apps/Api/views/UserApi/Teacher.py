@@ -5,7 +5,9 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from rest_framework.views import APIView
 
-from UserProfile.serializers import UserListSerializer
+from UserProfile.serializers import UserSerializer
+from apps.util import get_data
+
 from UserProfile.models import User
 
 
@@ -29,10 +31,12 @@ class UsersList(APIView):
         user_List = User.objects.filter(**query_Criteria)
 
         #分页处理
+
+        dataList = ["id", "username", "nickname", "myClass"]
         page_Num = request.GET.get("page", 1)
         paginator_OfUserAll = Paginator(user_List, 30)
         user_List = paginator_OfUserAll.page(page_Num).object_list
-        user_List = UserListSerializer(user_List, many=True).data
+        user_List = get_data(obj=user_List, serializer=UserSerializer, dataList=dataList)
 
         data["data"].update({"user_List":user_List})
 

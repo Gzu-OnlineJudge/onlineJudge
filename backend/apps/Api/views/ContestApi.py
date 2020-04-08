@@ -91,7 +91,7 @@ class GetContestPage(APIView):
         page_num = request.GET.get('page', 1)
         paginator_OfContestAll = paginator_OfContestAll.page(page_num)
         paginator_OfContestAll = paginator_OfContestAll.object_list
-        paginator_OfContestAll = MatchSerializer(paginator_OfContestAll, many=True).data
+        paginator_OfContestAll = get_data(obj=paginator_OfContestAll, serializer=MatchSerializer)
 
         data.update({
             'contest': paginator_OfContestAll,
@@ -171,8 +171,8 @@ class ContestShowContent(APIView):
         if time2 < time1:
             data.update({'is_start': False, 'startTime': contest.startTime})
         elif time2 >= time1:
-            problems = MatchIncludeSerializer(contest.matchinclude_set.all(), many=True).data
-            data.update({'is_start': True, 'contest': MatchSerializer(contest).data, 'problems': problems})
+            problems = get_data(obj=contest.matchinclude_set.all(), serializer=MatchIncludeSerializer)
+            data.update({'is_start': True, 'contest': get_data(contest, MatchSerializer), 'problems': problems})
 
         return JsonResponse(data)
 
@@ -189,7 +189,7 @@ class ContestGetProblems(APIView):
         except ObjectDoesNotExist:
             data.update({'status': 400, 'msg': '竞赛不存在'})
             return JsonResponse(data)
-        problems = MatchIncludeSerializer(contest.matchinclude_set.all, many=True).data
+        problems = get_data(obj=contest.matchinclude_set.all, serializer=MatchIncludeSerializer)
         ratio_List = ratio(contest, problems)  # 通过率
         ac_Nums = problem_ac_nums(contest, problems)  # 通过人数
         submit_Nums = problem_submit_nums(contest, problems)  # 提交人数
@@ -276,9 +276,11 @@ class ContestGetStatus(APIView):
         matchSubmit_List = MatchSubmit.objects.filter(**query_criteria)
 
         # 分页处理
+
+        dataList = ["match", "user", "problem", "runID", "result", "time", "memory", "language", "subTime",]
         paginator_OfStatusAll = Paginator(matchSubmit_List, 30)
         matchSubmit_List = paginator_OfStatusAll.page(page_num).object_list
-        matchSubmit_List = MatchSubmitListSerializer(matchSubmit_List, many=True).data
+        matchSubmit_List = get_data(obj=matchSubmit_List, serializer=MatchSubmitSerializer, dataList=dataList)
 
         data.update({
             'statusList': matchSubmit_List, 'now_page': page_num, 'page_num': paginator_OfStatusAll.num_pages,

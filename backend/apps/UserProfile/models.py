@@ -22,11 +22,6 @@ class User(AbstractUser):
     rating = models.IntegerField(default=1500)                                                            # rating
     ac_nums = models.IntegerField(default=0)                                                              # accept nums
 
-    def to_dict(self): #被序列化替代
-        return {'username': self.username, 'sex':self.GENDER_CHOICE,
-                'school': self.school,'major': self.major,'myClass':self.myClass,
-                'stuId':self.stuId,'headImage':self.headImage.url,'synopsis':self.synopsis,
-                'tel':self.tel,'rating':self.rating,'ac_nums':self.ac_nums}
 
     def change_token(self, token): # 修改token
         usertoken = self.usertoken

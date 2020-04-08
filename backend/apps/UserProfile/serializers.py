@@ -18,23 +18,25 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        exclude = ('password',)
-        # fields = '__all__'
+        fields = ("id", "password", "last_login", "is_superuser", "username", "first_name",
+                  "last_name", "email", "is_staff", "is_active", "date_joined", "nickname", "school",
+                  "major", "myClass", "stuId", "headImage", "synopsis", "tel", "rating", "ac_nums",
+                  "groups", "user_permissions",)
 
         # fields = ("id",  "username", "password", "GENDER_CHOICE", "school", "major", "myClass",
         #           "stuId", "headImage", "synopsis", "tel", "rating", "ac_nums")
 
 
-class OtherUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ("nickname", "GENDER_CHOICE", "school", "major", "headImage", "synopsis", "rating", "ac_nums")
+# class OtherUserSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ("nickname", "GENDER_CHOICE", "school", "major", "headImage", "synopsis", "rating", "ac_nums")
 
 
-class UserListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ("id", "username", "nickname", "myClass")
+# class UserListSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = User
+#         fields = ("id", "username", "nickname", "myClass")
 
 
 

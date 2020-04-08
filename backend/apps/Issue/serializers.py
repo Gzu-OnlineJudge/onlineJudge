@@ -1,21 +1,29 @@
 from rest_framework import serializers
-
+from apps.util import get_data
 from .models import *
 
 
 class ProblemSerializer(serializers.ModelSerializer):
+    problemData = serializers.SerializerMethodField()
+    problemExample = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_problemData(obj):
+        data = {}
+        problemDataList = obj.problemdata_set.all()
+        data = get_data(obj=problemDataList, serializer=ProblemExampleSerializer)
+        return data
+
+    @staticmethod
+    def get_problemExample(obj):
+        data = {}
+        problemExampleList = obj.problemexample_set.all()
+        data = get_data(obj=problemExampleList,serializer=ProblemExampleSerializer)
+        return data
 
     class Meta:
         model = Problem
         fields = '__all__'
-
-
-class ProblemListSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Problem
-        # fields = '__all__'
-        fields = ("no", "title", "classification", "probAuthority")
 
 
 class ProblemDataSerializer(serializers.ModelSerializer):
@@ -32,26 +40,30 @@ class ProblemExampleSerializer(serializers.ModelSerializer):
         fields = ("sampleInput","sampleOutput")
 
 
-class ProblemSubmitListSerializer(serializers.ModelSerializer):
-    user_Id = serializers.IntegerField(source="user.id")
-    user_Username = serializers.CharField(source="user.username")
-    problem_No = serializers.IntegerField(source="problem.no")
-    problem_Title = serializers.CharField(source="problem.title")
-
-    class Meta:
-        model = ProblemSubmit
-        fields = ("runID", "result", "time", "memory", "language", "subTime", "user_Id", "user_Username", "problem_No", "problem_Title")
-
-
 class ProblemSubmitSerializer(serializers.ModelSerializer):
-    user_Id = serializers.IntegerField(source="user.id")
-    user_Username = serializers.CharField(source="user.username")
-    problem_No = serializers.IntegerField(source="problem.no")
-    problem_Title = serializers.CharField(source="problem.title")
+    user = serializers.SerializerMethodField()
+    problem = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_user(obj):
+        from UserProfile.serializers import UserSerializer
+        user = obj.user
+        dataList = ["id", "username", "nickname"]
+        data = get_data(obj=user, serializer=UserSerializer, dataList=dataList)
+        return data
+
+    @staticmethod
+    def get_problem(obj):
+        problem = obj.problem
+        dataList = ["no", "title"]
+        data = get_data(obj=problem, serializer=ProblemSerializer, dataList=dataList)
+        return data
 
     class Meta:
         model = ProblemSubmit
-        fields = '__all__'
+        fields = "__all__"
+        # fields = ("runID", "result", "time", "memory", "language", "subTime", "user_Id", "user_Username", "problem_No", "problem_Title")
+
 
 
 
