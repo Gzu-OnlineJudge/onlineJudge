@@ -35,25 +35,25 @@ def change_status(status_List):
             item.result = 'Compile Output Limit'
 
 
-def register_status(contests, user):
-    for con in contests:
-        time1 = con.startTime.replace(tzinfo=None)  # 比赛开始时间
-        time2 = datetime.now()  # 当前系统时间
-        time3 = time1 + timedelta(minutes=int(con.howLong))  # 比赛结束时间
-        flag_time = 0
-        if time1 > time2:  # 比赛未开始
-            flag_time = 1
-        elif time2 < time3 and time2 > time1:  # 比赛进行中
-            flag_time = 2
-        elif time2 > time3:  # 比赛已结束
-            flag_time = 3
-        try:
-            flag = MatchRegister.objects.filter(match__id=con.id, user__username=user.username).count()
-        except Exception:
-            flag = 0
-        con.reg_status = flag  # 动态成员  用户对该比赛注册状态
-        Match.objects.filter(id=con.id).update(status=flag_time)
-        con.status = flag_time
+# def register_status(contests, user):
+#     for con in contests:
+#         time1 = con.startTime.replace(tzinfo=None)  # 比赛开始时间
+#         time2 = datetime.now()  # 当前系统时间
+#         time3 = time1 + timedelta(minutes=int(con.howLong))  # 比赛结束时间
+#         flag_time = 0
+#         if time1 > time2:  # 比赛未开始
+#             flag_time = 1
+#         elif time2 < time3 and time2 > time1:  # 比赛进行中
+#             flag_time = 2
+#         elif time2 > time3:  # 比赛已结束
+#             flag_time = 3
+#         try:
+#             flag = MatchRegister.objects.filter(match__id=con.id, user__username=user.username).count()
+#         except Exception:
+#             flag = 0
+#         con.reg_status = flag  # 动态成员  用户对该比赛注册状态
+#         Match.objects.filter(id=con.id).update(status=flag_time)
+#         con.status = flag_time
 
 
 class GetContestPage(APIView):
@@ -240,9 +240,11 @@ class ContestGetStatus(APIView):
         matchSubmit_List = MatchSubmit.objects.filter(**query_criteria)
 
         # 分页处理
+
+        dataList = ["match", "user", "problem", "runID", "result", "time", "memory", "language", "subTime",]
         paginator_OfStatusAll = Paginator(matchSubmit_List, 30)
         matchSubmit_List = paginator_OfStatusAll.page(page_num).object_list
-        matchSubmit_List = get_data(obj=matchSubmit_List, serializer=MatchSubmitSerializer, dataList=[])
+        matchSubmit_List = get_data(obj=matchSubmit_List, serializer=MatchSubmitSerializer, dataList=dataList, many=True)
 
         data.update({
             'statusList': matchSubmit_List, 'now_page': page_num, 'page_num': paginator_OfStatusAll.num_pages,
