@@ -6,7 +6,7 @@ class ListFiled(models.Field):
     description = "List Filed"
 
     def __init__(self, *args, **kwargs):
-        kwargs['max_length'] = 500
+        kwargs['max_length'] = 600
         super().__init__(*args, **kwargs)
 
     def db_type(self, connection):

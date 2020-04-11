@@ -223,7 +223,8 @@ JWT_AUTH = {
 #tinymce配置
 TINYMCE_DEFAULT_CONFIG = {
     'theme': 'advanced',
-    'width': 800,
-    'height': 600,
+    'plugins': 'table,spellchecker,paste,searchreplace,bbcode',
+    'cleanup_on_startup': True,
+    'custom_undo_redo_levels': 10,
 }
 

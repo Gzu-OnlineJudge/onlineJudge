@@ -8,7 +8,6 @@ import re
 from .Teacher import *
 from .Administrator import *
 from rest_framework.views import APIView
-from apps.util import get_data
 
 
 # 获取用户信息或修改用户信息(登录用户)
@@ -18,7 +17,7 @@ class UserOwn(APIView):
         is_login, user = check_auth(request._request) # 获取登录的用户
         data = {'status': 200, 'msg': '成功获取用户信息','data':{}}
         if is_login:
-            data['data'] = get_data(obj=user, serializers=UserSerializer)
+            data['data'] = user.get_user()
         else:
             data['msg'] = '未登录'
             data['status'] = 400
@@ -42,8 +41,7 @@ class UserOther(APIView):
         data = {'status': 200, 'msg': '成功获取用户信息', 'data': {}}
         try:
             user = User.objects.get(username=username)  # 获取不到会抛异常
-            dataList = ["nickname", "GENDER_CHOICE", "school", "major", "headImage", "synopsis", "rating", "ac_nums"]
-            data['data'] = get_data(obj = user, serializer=UserSerializer, dataList=dataList)
+            data['data'] = OtherUserSerializer(user).data
         except:
             data['msg'] = '用户不存在'
             data['status'] = 400
@@ -51,15 +49,15 @@ class UserOther(APIView):
 
 
 # 获取token列表
-# class Tokens(View):
-#     def get(self, request):
-#         tokenList = UserToken.objects.all()
-#         userTokenSerializer = UserTokenSerializer(tokenList, many=True)
-#         data = {
-#             'msg': '已获取所有用户的Token',
-#             'data': userTokenSerializer.data
-#         }
-#         return JsonResponse(data=data)
+class Tokens(View):
+    def get(self, request):
+        tokenList = UserToken.objects.all()
+        userTokenSerializer = UserTokenSerializer(tokenList, many=True)
+        data = {
+            'msg': '已获取所有用户的Token',
+            'data': userTokenSerializer.data
+        }
+        return JsonResponse(data=data)
 
 
 # 注册
@@ -137,7 +135,7 @@ class Authenticate(APIView):
         print(user)
         data.update({
             'is_login': is_login,
-            'user': get_data(obj=user, serializer=UserSerializer, context={'request':request._request}).data
+            'user': UserSerializer(user, context={'request': request._request}).data
         })
         return JsonResponse(data)
 

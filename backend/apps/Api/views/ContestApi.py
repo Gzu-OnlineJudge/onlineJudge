@@ -1,14 +1,13 @@
-import json, math, re, time, random
+import re
+import time
 from datetime import datetime, timedelta
 
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core.paginator import Paginator
 from django.http import JsonResponse
-from django.views import View
 from rest_framework.views import APIView
+from Issue.serializers import ProblemDataSerializer, ProblemSerializer
 from Contest.serializers import *
-
-from Contest.models import *
 from UserProfile.util import check_auth
 
 
@@ -72,84 +71,49 @@ class GetContestPage(APIView):
         contest = list(reversed(Match.objects.filter(**query_Criteria)))
 
         is_Login, user = check_auth(request)
-        register_status(contest, user)  # 判断用户对竞赛列表的注册情况
+        # register_status(contest, user)  # 判断用户对竞赛列表的注册情况
         # 暂未优化
-        try:
-            match_Status = int(request.GET.get('match_status', 0))
-        except ValueError:
-            match_Status = 0
-
-        if 3 >= match_Status >= 0:
-            temp = []
-            for con in contest:
-                if con.status == match_Status or (match_Status == 1 and con.status == 0) or match_Status == 0:
-                    temp.append(con)
-            contest = temp
+        # try:
+        #     match_Status = int(request.GET.get('match_status', 0))
+        # except ValueError:
+        #     match_Status = 0
+        #
+        # if 3 >= match_Status >= 0:
+        #     temp = []
+        #     for con in contest:
+        #         if con.status == match_Status or (match_Status == 1 and con.status == 0) or match_Status == 0:
+        #             temp.append(con)
+        #     contest = temp
 
         # 竞赛列表分页&序列化
         paginator_OfContestAll = Paginator(contest, 10)
         page_num = request.GET.get('page', 1)
         paginator_OfContestAll = paginator_OfContestAll.page(page_num)
         paginator_OfContestAll = paginator_OfContestAll.object_list
-        paginator_OfContestAll = get_data(obj=paginator_OfContestAll, serializer=MatchSerializer)
+        paginator_OfContestAll = get_data(obj=paginator_OfContestAll, serializer=MatchSerializer,
+                                          dataList=['owner', 'info', 'id', 'startTime', 'registerNum', 'howLong', 'matchName'],
+                                          context={'request': request})
 
         data.update({
             'contest': paginator_OfContestAll,
-            'now_page': page_num, 'match_status': match_Status,
+            'now_page': page_num, 'match_status': 0,
             'match_id_name': match_Id_Name})
         return JsonResponse(data)
 
 
-# 通过率
-def ratio(match, problems):
-    ratio_List = []
-    for prob in problems:
-        nums = MatchSubmit.objects.filter(match__id=match.id, problem__no=prob.no).exclude(result='0')
-        ac_Nums = nums.filter(result='1').count()
-        nums = len(nums)
-        if ac_Nums != 0:
-            ratio_List.append(round(float(ac_Nums / nums), 3) * 100)
-        else:
-            ratio_List.append('0')
-    return ratio_List
-
-
-# AC nums
-def problem_ac_nums(match, problems):
-    ac_List = []
-    for prob in problems:
-        nums = MatchSubmit.objects.filter(match__id=match.id, problem__no=prob.proNo).exclude(result='0')
-        ac_Nums = nums.filter(result='1')
-        ac_Nums = len(ac_Nums)
-        ac_List.append(ac_Nums)
-    return ac_List
-
-
-# submit nums
-def problem_submit_nums(match, problems):
-    submit_List = []
-    for prob in problems:
-        nums = MatchSubmit.objects.filter(match__id=match.id, problem__no=prob.proNo).exclude(result='0')
-        nums = len(nums)
-        submit_List.append(nums)
-    return submit_List
-
-
-def is_accepted(match, user, probs):
-    ac_List = []
-    for prob in probs:
-        try:
-            if MatchSubmit.objects.filter(match__id=match.id, user__username=user.username, problem__no=prob.proNo,
-                                          result='1').exists():
-                ac_List.append('yes')
-            elif MatchSubmit.objects.filter(match__id=match.id, user__username=user.username,
-                                            problem__no=prob.proNo).exists():
-                ac_List.append('no')
-            else:
-                ac_List.append('')
-        except:
-            ac_List.append('')
-    return ac_List
+def is_accepted(match, user, problems):
+    exec_problems = []
+    for problem in problems:
+        # 判断当前用户的提交记录中 是否存在已经正确的提交 有则在信息中添加一条字段记录状态
+        if MatchSubmit.objects.filter(match__id=match.id, user__username=user.username, problem__no=problem.no,
+                                      result='1').exists():
+            problem.is_ac = True
+        # 此处表示 有提交 但是并未正确
+        elif MatchSubmit.objects.filter(match__id=match.id, user__username=user.username,
+                                        problem__no=problem.no).exists():
+            problem.is_ac = False
+        exec_problems.append(problem)
+    return exec_problems
 
 
 # 以下为展示比赛内容
@@ -159,20 +123,22 @@ class ContestShowContent(APIView):
     def get(request, match_id):  # 比赛包含的题目
         data = {'status': 200, 'msg': '成功获取比赛题目列表', 'data': {}}
         try:
-            contest = Match.objects.get(id=match_id)
+            match = Match.objects.get(id=match_id)
         except ObjectDoesNotExist:
             data.update({'status': 400, 'msg': '竞赛不存在'})
             return JsonResponse(data)
         except MultipleObjectsReturned:
             data.update({'status': 400, 'msg': '竞赛错误'})
             return JsonResponse(data)
-        time1 = contest.startTime.replace(tzinfo=None)  # 比赛开始时间
+
+        time1 = match.startTime.replace(tzinfo=None)  # 比赛开始时间
         time2 = datetime.now()  # 当前系统时间
         if time2 < time1:
-            data.update({'is_start': False, 'startTime': contest.startTime})
+            data.update({'is_start': False, 'startTime': match.startTime})
         elif time2 >= time1:
-            problems = get_data(obj=contest.matchinclude_set.all(), serializer=MatchIncludeSerializer)
-            data.update({'is_start': True, 'contest': get_data(contest, MatchSerializer), 'problems': problems})
+            problems = get_data(obj=match.matchinclude_set.all(), serializer=MatchIncludeSerializer, dataList=[])
+            data.update({'is_start': True, 'contest': get_data(obj=match, serializer=MatchSerializer, dataList=[]),
+                         'problems': problems})
 
         return JsonResponse(data)
 
@@ -182,47 +148,45 @@ class ContestGetProblems(APIView):
 
     @staticmethod
     def get(request, match_id):  # 获取题目的提交人数&通过人数&通过率&用户的通过情况
-        data = {'status': 200, 'msg': '成功获取比赛题目列表', 'data': {}}
+        data = {'status': 200, 'msg': '成功获取比赛题目列表'}
         try:
-            contest = Match.objects.get(id=match_id)
+            match = Match.objects.get(id=match_id)
             # 尝试获取比赛，获取不到就不做处理
         except ObjectDoesNotExist:
             data.update({'status': 400, 'msg': '竞赛不存在'})
             return JsonResponse(data)
-        problems = get_data(obj=contest.matchinclude_set.all, serializer=MatchIncludeSerializer)
-        ratio_List = ratio(contest, problems)  # 通过率
-        ac_Nums = problem_ac_nums(contest, problems)  # 通过人数
-        submit_Nums = problem_submit_nums(contest, problems)  # 提交人数
-        is_Login, user = check_auth(request)
-        ac_List = is_accepted(contest, user, problems)  # 用户通过情况
-        data["data"] = {
-            'ratio_list': ratio_List,
-            'ac_nums': ac_Nums,
-            'submit_nums': submit_Nums,
-            'ac_list': ac_List
-        }
-
+        problems = get_data(obj=match.matchinclude_set.all(), serializer=MatchIncludeSerializer, dataList=[])
+        is_login, user = check_auth(request)
+        exec_problems = is_accepted(match, user, problems)  # 包含对于当前用户是否已经通过
+        data.update({
+            'problems': exec_problems
+        })
         return JsonResponse(data)
 
 
 # 以下为展示比赛排名, 此函数是由Ajax提交的
 
-# class ContestGetRank(APIView):
-#     def get(self, request, match_id):
-#         data = {'status': 200, 'msg': '获取成功', 'data': {}}
-#         if request._request.is_ajax():
-#             try:
-#                 contest = Match.objects.get(id=match_id)  # 获得这场比赛的所有信息
-#             except:
-#                 data.update({'msg':'Error: No such contest!'})
-#                 return JsonResponse(data)
-#             # 从比赛中获取题目列表
-#             contest_name = contest.matchName
-#             problem_id_list = list(contest.include.all())
-#             users = MatchRegister.objects.filter(match__id=contest.id)  # 从注册比赛的所有用户中查找用户
-#             if not users.exists():
-#                 return HttpResponse(json.dumps({'Error': {'content': 'No user registration contest!'}}))
-#             return HttpResponse(json.dumps({'Success': {'rankList': []}}))
+class ContestGetRank(APIView):
+
+    @staticmethod
+    def get(request, match_id):
+        data = {'status': 200, 'msg': '获取成功', }
+        try:
+            match = Match.objects.get(id=match_id)  # 获得这场比赛的所有信息
+        except ObjectDoesNotExist:
+            data.update({'msg': 'Error: No such contest!'})
+            return JsonResponse(data)
+        ranks = get_data(match.matchrank_set.all(), serializer=MatchRankSerializer, dataList=[])
+
+        data.update({
+            'ranks': ranks
+        })
+        return JsonResponse(data)
+        # 从比赛中获取题目列表
+        # users = MatchRegister.objects.filter(match__id=contest.id)  # 从注册比赛的所有用户中查找用户
+        # if not users.exists():
+        #     return HttpResponse(json.dumps({'Error': {'content': 'No user registration contest!'}}))
+        # return HttpResponse(json.dumps({'Success': {'rankList': []}}))
 
 
 # 以下为展示比赛状态, 此函数是由Ajax提交的
@@ -276,11 +240,9 @@ class ContestGetStatus(APIView):
         matchSubmit_List = MatchSubmit.objects.filter(**query_criteria)
 
         # 分页处理
-
-        dataList = ["match", "user", "problem", "runID", "result", "time", "memory", "language", "subTime",]
         paginator_OfStatusAll = Paginator(matchSubmit_List, 30)
         matchSubmit_List = paginator_OfStatusAll.page(page_num).object_list
-        matchSubmit_List = get_data(obj=matchSubmit_List, serializer=MatchSubmitSerializer, dataList=dataList)
+        matchSubmit_List = get_data(obj=matchSubmit_List, serializer=MatchSubmitSerializer, dataList=[])
 
         data.update({
             'statusList': matchSubmit_List, 'now_page': page_num, 'page_num': paginator_OfStatusAll.num_pages,
@@ -366,6 +328,20 @@ class ContestSubmitStatus(APIView):
                 # 对于空代码提交， 向ajax返回错误信息
                 data.update({'status': 400, 'msg': 'Error： Your code is empty!'})
                 return JsonResponse(data)
+
+
+class GetContestProblemPage(APIView):
+    @staticmethod
+    def get(request, match_id, problem_id):
+        try:
+            problem = MatchInclude.objects.get(match__id=match_id, problem__no=problem_id).problem
+        except ObjectDoesNotExist:
+            pass
+        problem = ProblemSerializer(problem).data
+
+        return JsonResponse({
+            'problem': problem
+        })
 
 
 # 注册比赛

@@ -17,5 +17,5 @@ urlpatterns_User = [
 
     path('authenticate/', views.Authenticate.as_view()),
 
-    # path('tokens/', views.Tokens.as_view(), name='tokens'),
+    path('tokens/', views.Tokens.as_view(), name='tokens'),
 ]

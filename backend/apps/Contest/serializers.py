@@ -1,13 +1,12 @@
+from datetime import datetime
+
 from rest_framework import serializers
 from apps.util import get_data
 
 from .models import *
-from Issue.models import *
-from UserProfile.serializers import UserSerializer
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    reg_status = serializers.IntegerField(default=0)
     owner = serializers.SerializerMethodField()
 
     @staticmethod
@@ -21,20 +20,6 @@ class MatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Match
         fields = '__all__'
-
-
-# class MatchSubmitListSerializer(serializers.ModelSerializer):
-#     match_id = serializers.CharField(source="match.id")
-#     user = serializers.SerializerMethodField()
-#     problem_id = serializers.IntegerField(source="problem.no")
-#
-#     @staticmethod
-#     def get_user(obj):
-#         return UserSerializer(obj.user).data
-#
-#     class Meta:
-#         model = MatchSubmit
-#         fields = ("match_id", "user", "problem_id", "runID", "result", "time", "memory", "language", "subTime",)
 
 
 class MatchSubmitSerializer(serializers.ModelSerializer):
@@ -92,13 +77,12 @@ class MatchIncludeSerializer(serializers.ModelSerializer):
         from Issue.serializers import ProblemSerializer
         dataList = ["no", "title", "classification", "probAuthority"]
         problem = obj.user
-        data = get_data(obj=problem, serializer=ProblemSerializer, dataList=dataList)
+        data = get_data(obj=problem, serializer=ProblemSerializer, dataList='__all__')
         return data
 
     class Meta:
         model = MatchInclude
         fields = "__all__"
-        # fields = ("ac_num", "total_num", "match_id", "problem_id", "no", "title", "classification", "probAuthority")
 
 
 class MatchRankSerializer(serializers.ModelSerializer):

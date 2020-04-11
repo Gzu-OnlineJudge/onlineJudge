@@ -8,7 +8,6 @@ from rest_framework import serializers
 from Issue.models import Problem
 from django.http import JsonResponse
 from Issue.serializers import *
-from apps.util import get_data
 
 #获取用户的问题的通过状态
 from UserProfile.util import check_auth
@@ -51,12 +50,11 @@ class GetProblemPage(APIView):
         problems = Problem.objects.filter(**query_Criteria)
         # 分页处理
 
-        dataList = ["no", "title", "classification", "probAuthority"]
         paginator_OfProblemsAll = Paginator(problems, 20)
         page_Num = request.GET.get('page', 1)
         paginator_OfProblemsAll = paginator_OfProblemsAll.page(page_Num)
         paginator_OfProblemsAll = paginator_OfProblemsAll.object_list
-        paginator_OfProblemsAll = get_data(obj=paginator_OfProblemsAll, serializer=ProblemSerializer, dataList=dataList)
+        paginator_OfProblemsAll = ProblemListSerializer(paginator_OfProblemsAll, many = True).data
 
         is_Login, user = check_auth(request._request)
         ac_Flag = is_accepted(user, paginator_OfProblemsAll)
@@ -178,14 +176,10 @@ class GetProblemSubmitPage(APIView):
         submit_List = ProblemSubmit.objects.filter(**query_Criteria)
         submit_List = list(reversed(submit_List)) #反转 使最近提交在前
         change_status(submit_List)
-
-        #分页
-        dataList = ["runID", "result", "time", "memory", "language", "subTime", "user", "problem"]
         paginator_OfSubmitListAll = Paginator(submit_List, 25) #分页
         paginator_OfSubmitListAll = paginator_OfSubmitListAll.page(page_Num)
         paginator_OfSubmitListAll = paginator_OfSubmitListAll.object_list
-        paginator_OfSubmitListAll = get_data(obj=paginator_OfSubmitListAll, serializer=ProblemSubmitSerializer, dataList=dataList)
-
+        paginator_OfSubmitListAll = ProblemSubmitListSerializer(paginator_OfSubmitListAll, many=True).data
         data = {'status': 200, 'msg': '获取成功', 'data': {}}
         data['data'] = {
             'statuses': paginator_OfSubmitListAll, 'now_page': page_Num,
@@ -212,8 +206,7 @@ class GetProblemSubmit(APIView):
         problem_Submit_Id = request.GET.get("problem_Submit_Id","")
         print(problem_Submit_Id)
         problem_Submit = ProblemSubmit.objects.get(runID = problem_Submit_Id)
-        problem_Submit = get_data(obj=problem_Submit, serializer=ProblemSubmitSerializer)
-
+        problem_Submit = ProblemSubmitSerializer(problem_Submit).data
         data["data"] = {"problem_Submit":problem_Submit}
         return JsonResponse(data)
 

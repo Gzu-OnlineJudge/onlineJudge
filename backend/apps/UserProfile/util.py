@@ -1,6 +1,5 @@
 from rest_framework_jwt.settings import api_settings
 from .serializers import UserSerializer
-from apps.util import get_data
 
 
 # 在token中封装有 username user_id ip
@@ -31,7 +30,7 @@ def jwt_response_payload_handler(user=None, request=None):
     token = jwt_encode_handler(payload)
     return {
         'token': token,
-        'user': get_data(obj=user, serializer=UserSerializer, context={'request': request}).data
+        'user': UserSerializer(user, context={'request': request}).data
     }
 
 
