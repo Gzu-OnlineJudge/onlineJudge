@@ -83,9 +83,9 @@
             </tr>
             </thead>
             <tbody>
-            <tr v-for="i in 30" :key="i">
-              <th scope="row">{{i}}</th>
-              <td><router-link :to="{name: 'contestProblem', params: {contest_id: 1, problem_id: 1}}">A+B问题</router-link></td>
+            <tr v-for="(i, index) in problems" :key="index">
+              <th scope="row">{{i.no}}</th>
+              <td><router-link :to="{name: 'contestProblem', params: {contest_id: 1, problem_id: 1000}}">{{i.title}}</router-link></td>
               <td>
                 <div class="type-item">数论</div>
                 <div class="type-item">动态规划</div>
@@ -93,7 +93,7 @@
                 <div class="type-item">字符串</div>
               </td>
               <td>很难</td>
-              <td>125 / 5897</td>
+              <td>{{i.ac_nums}} / {{i.submit_nums}}</td>
               <td>未提交</td>
             </tr>
             </tbody>
@@ -106,8 +106,23 @@
 </template>
 
 <script>
+  import axios from 'axios'
   export default {
     name: "problem",
+    data(){
+      return {
+        problems: '',
+      }
+    },
+    beforeRouteEnter(to, from, next){
+      axios.get(to.meta.path).then(res=>{
+        if(res.status === 200){
+          next(vm=>{
+            vm.problems = res.data.problems;
+          })
+        }
+      })
+    },
     methods: {
       downSelect(event){
         let target = event.srcElement || event.target;

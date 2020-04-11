@@ -31,7 +31,7 @@ def jwt_response_payload_handler(user=None, request=None):
     token = jwt_encode_handler(payload)
     return {
         'token': token,
-        'user': get_data(obj=user, serializer=UserSerializer, context={'request': request}).data
+        'user': get_data(obj=user, serializer=UserSerializer, context={'request': request})
     }
 
 

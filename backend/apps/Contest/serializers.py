@@ -28,7 +28,7 @@ class MatchSerializer(serializers.ModelSerializer):
         flag_time = 0
         if time1 > time2:  # 比赛未开始
             flag_time = 1
-        elif time2 < time3 and time2 > time1:  # 比赛进行中
+        elif time3 > time2 > time1:  # 比赛进行中
             flag_time = 2
         elif time2 > time3:  # 比赛已结束
             flag_time = 3
@@ -36,22 +36,8 @@ class MatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Match
-        method_fields = ["owner"]
+        method_fields = ["owner", "status"]
         fields = '__all__'
-
-
-# class MatchSubmitListSerializer(serializers.ModelSerializer):
-#     match_id = serializers.CharField(source="match.id")
-#     user = serializers.SerializerMethodField()
-#     problem_id = serializers.IntegerField(source="problem.no")
-#
-#     @staticmethod
-#     def get_user(obj):
-#         return UserSerializer(obj.user).data
-#
-#     class Meta:
-#         model = MatchSubmit
-#         fields = ("match_id", "user", "problem_id", "runID", "result", "time", "memory", "language", "subTime",)
 
 
 class MatchSubmitSerializer(serializers.ModelSerializer):
@@ -78,7 +64,7 @@ class MatchSubmitSerializer(serializers.ModelSerializer):
     def get_problem(obj):
         from Issue.serializers import ProblemSerializer
         dataList = ["no", "title"]
-        problem = obj.user
+        problem = obj.problem
         data = get_data(obj=problem, serializer=ProblemSerializer, dataList=dataList)
         return data
 
@@ -108,8 +94,8 @@ class MatchIncludeSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_problem(obj):
         from Issue.serializers import ProblemSerializer
-        dataList = ["no", "title", "classification", "probAuthority"]
-        problem = obj.user
+        dataList = ['no', 'title', 'time', 'memory']
+        problem = obj.problem
         data = get_data(obj=problem, serializer=ProblemSerializer, dataList=dataList)
         return data
 
@@ -117,12 +103,12 @@ class MatchIncludeSerializer(serializers.ModelSerializer):
         method_fields = ["match", "problem"]
         model = MatchInclude
         fields = "__all__"
-        # fields = ("ac_num", "total_num", "match_id", "problem_id", "no", "title", "classification", "probAuthority")
 
 
 class MatchRankSerializer(serializers.ModelSerializer):
     match = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
+    rank = serializers.SerializerMethodField()
 
     @staticmethod
     def get_match(obj):
@@ -139,7 +125,11 @@ class MatchRankSerializer(serializers.ModelSerializer):
         data = get_data(obj=user, serializer=UserSerializer, dataList=dataList)
         return data
 
+    @staticmethod
+    def get_rank(obj):
+        return obj.rank
+
     class Meta:
-        method_fields = ["match", "user"]
+        method_fields = ["match", "user", "rank"]
         model = MatchRank
         fields = "__all__"

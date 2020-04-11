@@ -4,29 +4,34 @@
       <div class="container px-0 bg-white">
         <div class="col-12 px-0">
           <div class="alert alert-info d-flex flex-column" id="alert">
-            <h5 class="my-2"><router-link class="text-success" to="#">A - A+B problem</router-link></h5>
+            <h5 class="my-2">
+              <router-link class="text-success" :to="{name: 'contestProblem',
+                                                                     params: {contest_id: submit.match.id, problem_id: submit.problem.no}}">
+              {{submit.problem.title}}
+              </router-link>
+            </h5>
             <div class="text-muted d-flex my-2 flex-column flex-md-row">
               <div class="mr-2 mb-1 mb-md-0">
-                <span><b class="mr-1">提交时间 :</b> 2020-03-27 21:31:05</span>
+                <span><b class="mr-1">提交时间 :</b> {{(new Date(submit.subTime)).format('yyyy-MM-dd HH:mm:ss')}}</span>
               </div>
               <div class="mr-2 mb-1 mb-md-0">
-                <span><b class="mr-1">语言 :</b> C++</span>
+                <span><b class="mr-1">语言 :</b> {{submit.language}}</span>
               </div>
               <div class="mr-2 mb-1 mb-md-0">
-                <span><b class="mr-1">运行时间 :</b> 1950ms</span>
+                <span><b class="mr-1">运行时间 :</b> {{submit.time}}ms</span>
               </div>
               <div class="mr-2 mb-1 mb-md-0">
-                <span><b class="mr-1">内存 :</b> 34028K</span>
+                <span><b class="mr-1">内存 :</b> {{submit.memory}}kb</span>
               </div>
             </div>
             <div class="text-muted">
-              <span class="d-flex align-items-center"><b>运行状态 :</b> <div class="success ml-2">答案正确</div></span>
+              <span class="d-flex align-items-center"><b>运行状态 :</b> <div class="success ml-2">{{submit.result}}</div></span>
             </div>
           </div>
         </div>
         <div class="col-12 px-4 pb-4">
-          <h5><router-link class="text-success" to="#">Gzuwkj</router-link> 的代码</h5>
-          <div v-html="code"></div>
+          <h5><router-link class="text-success" :to="{name: 'userInfo', params: {user_id: submit.user.id}}">{{submit.user.username}}</router-link> 的代码</h5>
+          <div v-html="`<pre><code>${submit.content}</code></pre>`"></div>
         </div>
       </div>
     </div>
@@ -35,15 +40,24 @@
 
 <script>
   import thljs from 'highlight.js'
+  import axios from 'axios'
   import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers'
   import 'highlight.js/styles/github.css'
   export default {
     name: "contestProblemCode",
     data(){
       return {
-        code: "<pre><code>#include\"stdio.h\"\nint main(){\n" +
-          "return 0;\n" +
-          "}</code></pre>"
+        submit: {
+          match: {
+            id: 1,
+          },
+          problem: {
+            no: 1000,
+          },
+          user: {
+            id: 1,
+          }
+        }
       }
     },
     mounted() {
@@ -52,7 +66,17 @@
         hljs.initLineNumbersOnLoad();
         hljs.lineNumbersBlock($('pre code')[0])
       });
-    }
+    },
+    beforeRouteEnter(to, from, next){
+      axios.get(to.meta.path).then(res=>{
+        next(vm=>{
+          vm.submit = res.data.submit;
+        })
+      }).catch(error=>{
+        console.log(error)
+      })
+    },
+
   }
 </script>
 

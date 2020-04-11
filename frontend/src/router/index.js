@@ -10,6 +10,8 @@ import problem from "../components/problem/problem";
 import status from "../components/submit_status/status";
 import contestProblemCode from "../components/contest/contestProblemCode";
 
+
+
 Vue.use(Router);
 
 export default new Router({
@@ -18,18 +20,18 @@ export default new Router({
     /*******************比赛模块路由****************/
     {
       path: '/',
-      redirect: '/contest'
+      redirect: '/contest/'
     },
     {
       /**
        * 比赛列表
        */
-      path: '/contest',
+      path: '/contest/',
       name: 'contest',
       component: contest,
       meta: {
         name: '比赛列表',
-        path: '/contest',
+        path: '/contest/',
         index: 1,
         parent: undefined,
         nameHandler: undefined,
@@ -39,15 +41,15 @@ export default new Router({
       /**
        * 比赛内容
        */
-      path: '/contest/:contest_id',
+      path: '/contest/:contest_id/',
       name: 'contestContent',
       component: contestContent,
       params: {contest_id: 1},
       meta: {
         name: 'Round ',
-        path: '/contest/:contest_id',
+        path: '/contest/:contest_id/',
         index: 2,
-        parent: {path: '/contest', name: 'contest'},
+        parent: {path: '/contest/', name: 'contest'},
         nameHandler:(name, params)=>{
           return name + params['contest_id'];
         }
@@ -57,26 +59,26 @@ export default new Router({
       /**
        * 比赛题目
        */
-      path: '/contest/:contest_id/problem/:problem_id',
+      path: '/contest/:contest_id/problem/:problem_id/',
       name: 'contestProblem',
       component: contestProblem,
       meta: {
         name: '',
-        path: '/contest/:contest_id/problem/:problem_id',
+        path: '/contest/:contest_id/problem/:problem_id/',
         index: 3,
-        parent: {path: '/contest/:contest_id', name: 'contestContent'},
+        parent: {path: '/contest/:contest_id/', name: 'contestContent'},
         nameHandle: undefined,
       },
     },
     {
-      path: '/contest/:contest_id/status/:run_id/code',
+      path: '/contest/:contest_id/status/:run_id/code/',
       name: 'contestProblemCode',
       component: contestProblemCode,
       meta: {
         name: '',
-        path: '/contest/:contest_id/status/:run_id/code',
+        path: '/contest/:contest_id/status/:run_id/code/',
         index: 3,
-        parent: {path: '/contest/:contest_id', name: 'contestContent'},
+        parent: {path: '/contest/:contest_id/', name: 'contestContent'},
         nameHandler: (name, params)=>{
           return name + params['run_id'];
         },
@@ -84,36 +86,36 @@ export default new Router({
     },
     /*******************用户操作路由***********************/
     {
-      path: '/login',
+      path: '/login/',
       name: 'login',
       component: login_register,
       meta: {
         name: '登陆',
-        path: '/login',
+        path: '/login/',
         index: 1,
         parent: undefined,
         nameHandle: undefined,
       }
     },
     {
-      path: '/register',
+      path: '/register/',
       name: 'register',
       component: register,
       meta: {
         name: '注册',
-        path: '/register',
+        path: '/register/',
         index: 1,
         parent: undefined,
         nameHandle: undefined,
       }
     },
     {
-      path: '/user/:user_id',
+      path: '/user/:user_id/',
       name: 'userInfo',
       component: userInfo,
       meta: {
         name: '个人中心',
-        path: '/user/:user_id',
+        path: '/user/:user_id/',
         index: 1,
         parent: undefined,
         nameHandle: undefined,
@@ -124,12 +126,12 @@ export default new Router({
       /**
        * 题目列表
        */
-      path: '/problem',
+      path: '/problem/',
       name: 'problem',
       component: problem,
       meta: {
         name: '题库',
-        path: '/problem',
+        path: '/problem/',
         index: 1, /* 一级目录 */
         parent: undefined,
         nameHandler: undefined,
@@ -140,12 +142,12 @@ export default new Router({
       /**
        * 提交记录
        */
-      path: '/status',
+      path: '/status/',
       name: 'status',
       component: status,
       meta: {
         name: '提交记录',
-        path: '/status',
+        path: '/status/',
         index: 1, /* 一级目录 */
         parent: undefined,
         nameHandler: undefined,

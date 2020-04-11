@@ -38,7 +38,7 @@
         param.append('username', this.username);
         param.append('password', this.password);
         this.axios.post(
-          'http://192.168.0.100:8000/api/login/',
+          this.$route.meta.path,
           param
         ).then(res=>{
           if(res.data.status === 200){

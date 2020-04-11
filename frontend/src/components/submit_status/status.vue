@@ -76,15 +76,15 @@
           </tr>
           </thead>
           <tbody>
-          <tr v-for="i in 30" :key="i">
-            <td  scope="row">{{i}}</td>
-            <td><router-link to="#">Gzuwkj</router-link></td>
-            <td><router-link to="#">A+B problem</router-link></td>
-            <td><router-link :class="{'success': i%2==0, 'danger': i%2==1}" to="#">答案正确</router-link></td>
-            <td>137</td>
-            <td>1504</td>
-            <td>C</td>
-            <td>2020-3-3 22:45:02</td>
+          <tr v-for="(i, index) in statusList" :key="index">
+            <td  scope="row">{{i.runID}}</td>
+            <td><router-link :to="{name: 'userInfo', params: {user_id: i.user.id}}">{{i.user.username}}</router-link></td>
+            <td><router-link to="#">{{i.problem.title}}</router-link></td>
+            <td><router-link to="#">{{i.result}}</router-link></td>
+            <td>{{i.time}}</td>
+            <td>{{i.memory}}</td>
+            <td>{{i.language}}</td>
+            <td>{{(new Date(i.subTime) || new Date()).format('yyyy-MM-dd HH:mm:ss')}}</td>
           </tr>
           </tbody>
         </table>
@@ -94,8 +94,24 @@
 </template>
 
 <script>
+  import axios from 'axios'
   export default {
     name: "status",
+    data(){
+      return {
+        statusList: ''
+      }
+    },
+    beforeRouteEnter(to, from, next){
+      axios.get(to.meta.path).then(res=>{
+        if(res.data.status === 200){
+          next(vm=>{
+
+            vm.statusList = res.data.statusList;
+          })
+        }
+      })
+    },
     methods: {
       downSelect(event){
         let target = event.srcElement || event.target;

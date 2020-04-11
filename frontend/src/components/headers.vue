@@ -90,19 +90,19 @@
     mounted() {
       this.setToken(sessionStorage.token || localStorage.token);
       this.axios({
-        url: 'http://192.168.0.100:8000/api/authenticate/',
-        headers:{
-          'Authorization': 'JWT ' + this.token
-        },
+        url: '/authenticate/',
         method: 'get',
-      }).then(
-        res=>{
-          this.setLoginState(res.data.is_login);
-          this.setUser(res.data.user);
+      }).then(res=>{
+          if(res.status === 200){
+            this.setLoginState(res.data.is_login);
+            this.setUser(res.data.user);
+          }
+          else if(res.status === 401){
+            this.$router.replace({name: 'login'});
+          }
         }
-      ).catch(
-        res=>{
-          console.log(res);
+      ).catch(error=>{
+          this.$router.replace({name: 'login'});
         }
       );
     }

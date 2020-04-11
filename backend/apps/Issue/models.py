@@ -28,16 +28,15 @@ class Problem(models.Model):                                 # 问题类
     OutputFormat = HTMLField(blank=True, default='')          # 输出
     time = models.IntegerField(blank=True, default=1000)     # 运行时间
     memory = models.IntegerField(blank=True, default=256)    # 运行内存
-    tips = HTMLField(blank=True,default='')                           # 提示
+    tips = HTMLField(blank=True, default='')                           # 提示
     probSource = models.CharField(max_length=10, blank=True)          # 题目来源
     classification = models.CharField(choices=CLASSIFICATION, blank=True, max_length=10)  # 分类
     probAuthority = models.CharField(default='公开', choices=POWER_CHOSE, max_length=2)   # 权限
     weight = models.IntegerField(default=100)      # 分数
-    ratio = models.FloatField(default=0.0)         # 比例
     ac_nums = models.IntegerField(default=0)       # 通过数
     submit_nums = models.IntegerField(default=0)   # 提交数
 
-    def updata_problem(self, data): #改
+    def update_problem(self, data):  # 改
         self.title = data.get("title", self.title)
         self.content = data.get("content", self.content)
         self.InputFormat = data.get("InputFormat", self.InputFormat)

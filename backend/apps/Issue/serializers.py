@@ -18,7 +18,7 @@ class ProblemSerializer(serializers.ModelSerializer):
     def get_problemExample(obj):
         data = {}
         problemExampleList = obj.problemexample_set.all()
-        data = get_data(obj=problemExampleList,serializer=ProblemExampleSerializer)
+        data = get_data(obj=problemExampleList, serializer=ProblemExampleSerializer, many=True)
         return data
 
     class Meta:
@@ -31,14 +31,14 @@ class ProblemDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProblemData
-        fields = ("standardInput","standardOutput")
+        fields = ("standardInput", "standardOutput")
 
 
 class ProblemExampleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProblemExample
-        fields = ("sampleInput","sampleOutput")
+        fields = ("sampleInput", "sampleOutput")
 
 
 class ProblemSubmitSerializer(serializers.ModelSerializer):
@@ -64,7 +64,6 @@ class ProblemSubmitSerializer(serializers.ModelSerializer):
         model = ProblemSubmit
         fields = "__all__"
         method_fields = ["user", "problem"]
-        # fields = ("runID", "result", "time", "memory", "language", "subTime", "user_Id", "user_Username", "problem_No", "problem_Title")
 
 
 

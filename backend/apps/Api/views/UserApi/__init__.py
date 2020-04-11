@@ -130,16 +130,13 @@ class Login(APIView):
 
 
 class Authenticate(APIView):
-    def get(self, request):
-        is_login, user = check_auth(request) # 获取登录的用户
-        data = {}
-        print(is_login)
-        print(user)
-        data.update({
+    @staticmethod
+    def get(request):
+        is_login, user = check_auth(request)  # 获取登录的用户
+        return JsonResponse({
             'is_login': is_login,
-            'user': get_data(obj=user, serializer=UserSerializer, context={'request':request._request}).data
+            'user': get_data(obj=user, serializer=UserSerializer, context={'request':request})
         })
-        return JsonResponse(data)
 
 
 class Test(APIView):

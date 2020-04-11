@@ -4,17 +4,17 @@
       <div class="w-100 bg-white shadow-sm">
         <div class="mt-0 w-100 container px-0">
           <ul :class="{'show': MenuShow}" class="nav-contest nav flex-column flex-md-row align-items-center position-relative">
-            <li class="slide position-absolute"></li>
-            <li @click="tab=1,MenuShow=false" class="nav-item" :class="tab==1?'active':''">
+            <li class="slide position-absolute"/>
+            <li @click="tab=1, MenuShow=false" class="nav-item" :class="tab===1?'active':''">
               <a class="nav-link" >比赛说明</a>
             </li>
-            <li @click="tab=2,MenuShow=false" class="nav-item" :class="tab==2?'active':''">
+            <li @click="tab=2,MenuShow=false, getProblems()" class="nav-item" :class="tab===2?'active':''">
               <a class="nav-link" >题目</a>
             </li>
-            <li @click="tab=3,MenuShow=false" class="nav-item" :class="tab==3?'active':''">
+            <li @click="tab=3,MenuShow=false, getRankList()" class="nav-item" :class="tab===3?'active':''">
               <a class="nav-link" >排名</a>
             </li>
-            <li @click="tab=4,MenuShow=false, getStatusList()" class="nav-item" :class="tab==4?'active':''">
+            <li @click="tab=4,MenuShow=false, getStatusList()" class="nav-item" :class="tab===4?'active':''">
               <a class="nav-link" >提交记录</a>
             </li>
             <li @click="MenuShow=!MenuShow" class="bg-white position-absolute nav-item d-md-none w-100">
@@ -33,7 +33,7 @@
               <div class="mb-3 d-flex justify-content-between">
                 <div class="col-3 d-none d-md-flex justify-content-center align-items-center">
                   <span class="font-weight-bolder mr-1">开始时间 :</span>
-                  {{contest.startTime}}
+                  {{(contest.startTime || new Date()).format('yyyy-MM-dd HH:mm:ss')}}
                 </div>
                 <div class="col-12 d-flex col-md-3 justify-content-center flex-wrap">
                   <h4 class="mr-2">Round 1 :</h4>
@@ -41,7 +41,7 @@
                 </div>
                 <div class="col-3 col-3 d-none d-md-flex justify-content-center align-items-center">
                   <span class="font-weight-bolder mr-1">结束时间 :</span>
-                  {{contest.endTime}}
+                  {{(contest.endTime || new Date()).format('yyyy-MM-dd HH:mm:ss')}}
                 </div>
               </div>
               <div class="progress mx-3">
@@ -72,8 +72,8 @@
                   <tr v-for="(i) in problems" :key="i.no">
                     <th scope="row">{{i.no}}</th>
                     <td>
-                      <router-link :to="{name: 'contestProblem', params: {contest_id: contest.id, problem_id: i.problem_id}}">
-                        {{i.title}}
+                      <router-link :to="{name: 'contestProblem', params: {contest_id: contest.id, problem_id: i.problem.no}}">
+                        {{i.problem.title}}
                       </router-link>
                     </td>
                     <td>{{i.ac_num}}</td>
@@ -118,13 +118,13 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr v-for="i in 10" :key="i">
-                      <td scope="row">{{i}}</td>
-                      <td><router-link to="#">Gzuwkj</router-link></td>
-                      <td>10</td>
-                      <td>文坤建</td>
-                      <td>03:14:50</td>
-                      <td>贵州职业技术学院</td>
+                    <tr v-for="(i, index) in rankList" :key="index">
+                      <td scope="row">{{index + 1}}</td>
+                      <td><router-link :to="{name: 'userInfo', params: {user_id: i.user.id}}">{{i.user.username}}</router-link></td>
+                      <td>{{i.acNum}}</td>
+                      <td>{{i.user.nickname}}</td>
+                      <td>{{i.total_time | parseDate}}</td>
+                      <td>{{i.user.school}}</td>
                     </tr>
                     </tbody>
                   </table>
@@ -137,8 +137,13 @@
                     </tr>
                     </thead>
                     <tbody @mousedown="dragScroll($event)" ref="tableMove">
-                    <tr v-for="i in 10" :key="i">
-                      <td v-for="j in 15" :key="j"></td>
+                    <tr v-for="(i, index) in rankList" :key="index">
+                      <td v-for="(j, _index) in i.rank" :key="_index" :class="{'success': j.is_ac, 'danger': !j.is_ac}">
+                        <span v-if="j.is_ac">
+                          {{j.useTime | parseDate}}
+                        </span>
+                        (-{{j.wrongTime}})
+                      </td>
                     </tr>
                     </tbody>
                   </table>
@@ -225,16 +230,26 @@
                   <tr v-for="(i, index) in statusList" :key="index">
                     <td  scope="row">{{i.runID}}</td>
                     <td><router-link to="#">{{i.user.username}}</router-link></td>
-                    <td><router-link to="#">{{(problems.find(item=>item.problem_id === i.problem_id) || {'no': 'A'}).no}}</router-link></td>
                     <td>
-                      <router-link :to="{name: 'contestProblemCode', params: {contest_id: i.match_id, run_id: i.runID}}">
+                      <router-link :to="{
+                                           name: 'contestProblem',
+                                           params: {
+                                                      contest_id: contest.id,
+                                                      problem_id: i.problem.no
+                                                    }
+                                         }">
+                        {{(problems.find(item=>item.problem.no === i.problem.no) || {'no': 'A'}).no}}
+                      </router-link>
+                    </td>
+                    <td>
+                      <router-link :to="{name: 'contestProblemCode', params: {contest_id: contest.id, run_id: i.runID}}">
                         {{i.result}}
                       </router-link>
                     </td>
                     <td>{{i.memory}}</td>
                     <td>{{i.time}}</td>
                     <td>{{i.language}}</td>
-                    <td>{{i.subTime}}</td>
+                    <td>{{(i.subTime || new Date()).format('yyyy-MM-dd HH:mm:ss')}}</td>
                   </tr>
                   </tbody>
                 </table>
@@ -280,7 +295,8 @@
         },
         problems: [],
         statusList: [],
-        contest: '',
+        rankList: [],
+        contest: 'null',
       }
     },
     computed: {
@@ -347,7 +363,7 @@
 
     },
     beforeRouteEnter(to, from, next){
-      axios.get(`http://192.168.0.100:8000/api/contest/${to.params['contest_id']}/`).then(res=>{
+      axios.get(to.meta.path).then(res=>{
         if(res.data.status === 200){
           next(vm=>{
             let data = res.data;
@@ -380,9 +396,6 @@
       }
     },
     filters: {
-      format(value){
-        return String.fromCharCode(65 + value);
-      },
       parseNum(value, index){
         value = value.toString();
         index = (index - value.length) < 0 ? 0 :  (index - value.length);
@@ -390,7 +403,23 @@
           value = '0' + value;
         }
         return value;
-      }
+      },
+      parseDate(value){
+        let hours = Math.floor(value / (60 * 60));
+        value %= (60 * 60);
+        let mints = Math.floor(value / 60);
+        value %= 60;
+        let seconds = value;
+        function parseNum(value, index){
+          value = value.toString();
+          index = (index - value.length) < 0 ? 0 :  (index - value.length);
+          while (index--){
+            value = '0' + value;
+          }
+          return value;
+        };
+        return `${parseNum(hours, 2)}:${parseNum(mints, 2)}:${parseNum(seconds, 2)}`;
+      },
     },
     methods: {
       dragScroll(event){
@@ -405,32 +434,6 @@
           $(_this.$refs.tableMove).off('mousemove');
         })
       },
-      setRank(index){
-        if(index == 1) return `<svg viewBox="0 0 1251 1024" width="24" height="24">
-                                <path fill="#f39c12" d="M1000.448 815.217778l208.782222 16.042666-238.933333-240.981333a410.737778
-                                 410.737778 0 0 0 44.202667-184.718222C1016.490667 182.727111 833.763556 0 610.929778 0 387.982222
-                                 0 207.303111 182.727111 207.303111 405.617778c0 74.24 20.081778 144.497778 56.263111 204.8L44.714667
-                                 831.203556l208.782222-14.051556L239.502222 1024l236.942222-236.942222a382.976 382.976 0 0 0 136.533334
-                                 24.120889c56.206222 0 110.421333-12.060444 158.606222-32.142223L1014.442667 1024l-13.994667-208.782222z
-                                 m-508.416-109.624889c-5.290667-1.763556-12.401778-5.347556-17.692444-7.111111-3.584-1.763556-5.347556-1.763556-8.874667-3.527111-5.347556-1.763556-10.638222-5.347556-14.222222-7.111111-3.527111-1.763556-7.054222-5.290667-12.401778-7.111112-3.527111-1.706667-7.111111-5.290667-10.638222-7.054222l-21.276445-15.985778c-1.763556-1.763556-3.584-3.527111-5.347555-3.527111a114.744889 114.744889 0 0 0-15.928889-14.222222c-3.584-1.706667-5.347556-5.290667-7.111111-8.874667a77.141333 77.141333
-                                 0 0 1-10.638223-12.401777c-3.527111-3.527111-5.347556-7.111111-8.874666-10.638223s-5.347556-7.111111-8.874667-10.638222-5.290667-8.874667-8.874667-12.401778a319.715556 319.715556
-                                 0 0 1-53.191111-175.616 322.844444 322.844444 0 0 1 322.844445-322.844444c177.322667 0 322.787556 145.464889
-                                 322.787555 322.844444 0 54.954667-14.222222 108.202667-39.025777 152.519112h-1.706667c-3.584 7.111111-8.931556
-                                 14.222222-12.515556 21.276444-1.706667 3.584-3.527111 7.111111-7.054222 8.874667-3.527111 5.347556-8.874667
-                                 10.638222-12.401778 15.985777a13.824 13.824 0 0 1-7.111111 7.111112c-3.527111 5.290667-8.874667 8.874667-12.401778
-                                 14.222222l-7.111111 7.054222c-3.527111 3.527111-8.874667 7.111111-12.401777 12.401778-3.527111 1.763556-5.347556 5.347556-8.874667
-                                 7.111111-3.527111 3.527111-7.111111 5.290667-12.401778 8.874667a175.786667 175.786667 0 0 1-30.151111 19.512888s-1.820444 0-1.820444
-                                 1.706667c-7.054222 3.584-12.401778 7.168-19.456 10.695111-3.584 1.763556-7.111111 3.527111-8.874667 5.347556l-5.347556 1.706666a323.128889
-                                 323.128889 0 0 1-124.131555 24.860445 337.180444 337.180444 0 0 1-118.897778-23.04z m376.832 40.277333c2.844444 0 5.12-3.925333
-                                 7.793778-5.176889 6.428444 0 9.102222-6.542222 14.222222-10.410666 1.365333-1.308444 2.673778-1.308444 2.673778-2.616889 5.12-3.868444
-                                 10.353778-9.102222 15.587555-14.279111l3.868445-3.925334c5.176889-5.12 10.410667-10.353778 14.279111-16.839111 0-1.308444 1.308444-1.308444
-                                 1.308444-2.616889l11.719111-15.587555c1.308444-1.308444 1.763556-3.128889 1.763556-3.128889l95.744 99.555555-94.037333-9.955555 9.045333
-                                 93.639111-95.744-100.807111s9.102222-5.233778 11.776-7.850667z m-489.187556 1.194667c-3.072 0-5.518222-4.152889-8.248888-5.518222-6.826667
-                                 0-9.671111-6.883556-15.189334-11.036445-1.365333-1.365333-2.787556-1.365333-2.787555-2.787555-5.518222-4.096-11.036444-9.671111-16.497778-15.132445l-4.209778-4.152889a95.004444 95.004444 0 0 1-15.132444-17.976889c0-1.365333-1.422222-1.365333-1.422223-2.730666l-12.401777-16.554667a8.362667 8.362667 0 0 1-1.877334-3.299555l-101.717333 105.699555 99.896889-10.524444-9.557333 99.441777 101.660444-107.064888s-9.728-5.575111-12.515556-8.362667z" />
-                                <path fill="#f39c12" d="M560.583111 324.039111c-4.266667 1.137778-10.24 2.161778-14.449778 2.161778a36.181333 36.181333 0 0 1-35.953777-35.384889c0-16.611556 10.695111-30.549333 27.306666-35.384889l53.134222-15.587555c15.530667-4.266667 27.363556-6.940444 38.570667-6.940445h1.137778c22.528 0 40.618667 18.204444 40.618667 40.732445v302.478222a40.732444 40.732444 0 1 1-81.464889 0l0.056889-259.584-29.013334 7.509333z"/>
-                               </svg>`;
-        else return index;
-      },
       downSelect(event){
         let target = event.srcElement || event.target;
         let node = $(event.currentTarget);
@@ -439,17 +442,38 @@
         }
         node.children('div:last-child').toggleClass('show');
       },
+      getProblems(){
+        this.axios.get(`${this.$route.meta.path}problem/`).then(res=>{
+          if(res.data.status === 200){
+            this.problems = res.data.problems;
+          }
+        })
+      },
       getStatusList(){
-        this.axios.get(`http://192.168.0.100:8000/api/contest/${this.contest.id}/status/`).then(res=>{
+        this.axios.get(`${this.$route.meta.path}status/`).then(res=>{
           if(res.data.status === 200){
             this.statusList = [];
             res.data.statusList.forEach(item=>{
               item.subTime = new Date(item.subTime);
               this.statusList.push(item);
-            })
-            console.log(this.statusList);
+            });
           }
         });
+      },
+      getRankList(){
+        this.axios.get(`${this.$route.meta.path}rank/`).then(res=>{
+          if(res.data.status === 200){
+            this.rankList = [];
+            res.data.ranks.forEach(item=>{
+              item.total_time = 0;// 算罚时
+              item.rank.forEach(i=>{
+                if(i.is_ac)
+                  item.total_time += i.useTime + (20 * 60 * i.wrongTime);
+              });
+              this.rankList.push(item);
+            });
+          }
+        })
       }
     }
   }
@@ -558,7 +582,6 @@
   }
   table *{
     text-align: center;
-    user-select: none;
     padding: 0;
     font-size: 14px;
   }
@@ -682,6 +705,9 @@
   .rank-list div table tbody tr th,.rank-list div table tbody tr td{
     background-color: rgb(252, 252, 252);
   }
+  .rank-list div:last-child *{
+    user-select: none;
+  }
   .rank-list div:last-child{
     min-width: 6.5em;
     max-width: calc(6em * 7 + 1em);
@@ -693,6 +719,10 @@
   }
   .rank-list div:last-child table tbody{
     cursor: grab;
+  }
+  .rank-list div:last-child table tbody td span{
+    display: block;
+    height: 1rem;
   }
   .rank-list div:last-child table tbody tr td.success{
     background-color: rgba(79, 192, 141, 0.2);

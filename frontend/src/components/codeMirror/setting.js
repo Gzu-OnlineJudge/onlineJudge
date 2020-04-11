@@ -35,3 +35,6 @@ import 'codemirror/addon/fold/xml-fold.js'
 // 编辑的主题文件
 import 'codemirror/theme/monokai.css'
 import 'codemirror/theme/base16-light.css'
+
+import 'codemirror/addon/scroll/simplescrollbars.css'
+import 'codemirror/addon/scroll/simplescrollbars'

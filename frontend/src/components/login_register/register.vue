@@ -73,7 +73,7 @@
                                             repeatCount="indefinite"/>
                                   </path>
                                 </svg>`;
-        this.axios.post('http://192.168.0.100:8000/api/register/', param).then(res=>{
+        this.axios.post(this.$route.meta.path, param).then(res=>{
           if(res.data.status === 200){
             this.btn_class = 'btn-success';
             this.button =  `<svg t="1580619519964" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4641" width="40" height="40">

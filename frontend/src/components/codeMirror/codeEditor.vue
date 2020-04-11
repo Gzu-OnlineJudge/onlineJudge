@@ -22,7 +22,7 @@
           tabSize: 2, // tab
           lineNumbers: true, // 显示行号
           styleSelectedText: true,
-          scrollbarStyle: null,
+          scrollbarStyle: 'overlay',
           line: true,
           foldGutter: true, // 块槽
           gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
